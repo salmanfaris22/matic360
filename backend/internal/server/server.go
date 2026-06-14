@@ -49,12 +49,7 @@ func New(cfg *config.Config, db *gorm.DB, tm *security.TokenManager, store stora
 
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     joinOrigins(cfg.CORSOrigins),
-		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
-		AllowCredentials: true,
-	}))
+	app.Use(cors.New(buildCORSConfig(cfg.CORSOrigins)))
 
 	// Serve uploaded files (local storage driver).
 	app.Static("/uploads", cfg.Storage.LocalDir)
@@ -106,6 +101,34 @@ func New(cfg *config.Config, db *gorm.DB, tm *security.TokenManager, store stora
 	})
 
 	return app
+}
+
+func buildCORSConfig(origins []string) cors.Config {
+	cfg := cors.Config{
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
+	}
+	if allowAllOrigins(origins) {
+		// Reflect any Origin header (required when AllowCredentials is true).
+		cfg.AllowOriginsFunc = func(string) bool { return true }
+		return cfg
+	}
+	cfg.AllowOrigins = joinOrigins(origins)
+	return cfg
+}
+
+func allowAllOrigins(origins []string) bool {
+	if len(origins) == 0 {
+		return true
+	}
+	for _, o := range origins {
+		switch o {
+		case "*", "all", "ALL", "allow_all":
+			return true
+		}
+	}
+	return false
 }
 
 func joinOrigins(origins []string) string {
