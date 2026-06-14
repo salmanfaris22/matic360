@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (toggle `.dark` on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens (shadcn-style) ──────────────────────── */
+:root {
+  --background: 240 22% 98%;
+  --foreground: 224 32% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 32% 17%;
+  --muted: 240 18% 95%;
+  --muted-foreground: 222 12% 47%;
+  --border: 240 16% 90%;
+  --input: 240 16% 90%;
+  --ring: 252 56% 58%;
+  --primary: 252 56% 58%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 18% 95%;
+  --secondary-foreground: 224 32% 17%;
+  --accent: 252 60% 96%;
+  --accent-foreground: 252 56% 45%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 64% 42%;
+  --warning: 33 92% 48%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 224 24% 28%;
+  --radius: 0.7rem;
+}
+
+.dark {
+  --background: 224 38% 8%;
+  --foreground: 210 40% 96%;
+  --card: 224 34% 11%;
+  --card-foreground: 210 40% 96%;
+  --muted: 222 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 222 24% 20%;
+  --input: 222 24% 20%;
+  --ring: 252 70% 70%;
+  --primary: 252 70% 68%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 28% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --accent: 252 40% 22%;
+  --accent-foreground: 252 80% 88%;
+  --destructive: 0 63% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 64% 48%;
+  --warning: 38 92% 55%;
+  --sidebar: 224 36% 10%;
+  --sidebar-foreground: 214 28% 78%;
+}
+
+/* Map tokens to Tailwind theme colors via @theme inline. */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+}

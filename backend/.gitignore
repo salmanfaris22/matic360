@@ -1,0 +1,16 @@
+# env
+.env
+.env.local
+
+# build artifacts
+/bin/
+api
+*.exe
+
+# uploads (local storage)
+/uploads/*
+!/uploads/.gitkeep
+
+# go
+*.test
+*.out
