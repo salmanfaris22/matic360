@@ -2,9 +2,9 @@
 .env
 .env.local
 
-# build artifacts
+# build artifacts (root binary only — do not use bare "api" or cmd/api/ is ignored)
 /bin/
-api
+/api
 *.exe
 
 # uploads (local storage)

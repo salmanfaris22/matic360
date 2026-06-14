@@ -1,9 +1,24 @@
 # AWS EC2 — backend + Postgres only (frontend on Vercel).
 #
-# Setup:
+# Setup (Ubuntu EC2):
 #   cp .env.aws.example .env.aws
-#   # edit .env.aws with your Vercel URL, backend URL, and secrets
+#   nano .env.aws
+#
+#   # Ubuntu: allow docker without sudo (log out/in after this):
+#   sudo usermod -aG docker $USER
+#
+#   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+#   sudo mkswap /swapfile && sudo swapon /swapfile
+#
+#   # Option A — Docker Compose v2 plugin:
 #   docker compose --env-file .env.aws -f docker-compose.aws.yml up --build -d
+#
+#   # Option B — older Ubuntu (use hyphen, not space):
+#   docker-compose --env-file .env.aws -f docker-compose.aws.yml up --build -d
+#
+#   # Option C — if --env-file fails, load env then run:
+#   set -a && source .env.aws && set +a
+#   docker-compose -f docker-compose.aws.yml up --build -d
 #
 # EC2 security group: open 8080 (or 443 if behind nginx/Cloudflare).
 
