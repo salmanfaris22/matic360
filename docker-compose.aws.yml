@@ -1,44 +1,28 @@
 # AWS EC2 — backend + Postgres only (frontend on Vercel).
 #
-# Setup (Ubuntu EC2):
+# Setup:
 #   cp .env.aws.example .env.aws
 #   nano .env.aws
-#
-#   # Ubuntu: allow docker without sudo (log out/in after this):
-#   sudo usermod -aG docker $USER
-#
-#   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-#   sudo mkswap /swapfile && sudo swapon /swapfile
-#
-#   # Option A — Docker Compose v2 plugin:
-#   docker compose --env-file .env.aws -f docker-compose.aws.yml up --build -d
-#
-#   # Option B — older Ubuntu (use hyphen, not space):
-#   docker-compose --env-file .env.aws -f docker-compose.aws.yml up --build -d
-#
-#   # Option C — if --env-file fails, load env then run:
-#   set -a && source .env.aws && set +a
 #   docker-compose -f docker-compose.aws.yml up --build -d
 #
-# EC2 security group: open 8080 (or 443 if behind nginx/Cloudflare).
+# If backend keeps restarting, check logs:
+#   docker-compose -f docker-compose.aws.yml logs backend --tail 50
+#
+# If DB password was changed after first run, reset volumes:
+#   docker-compose -f docker-compose.aws.yml down -v
+#   docker-compose -f docker-compose.aws.yml up --build -d
 
 services:
   postgres:
     image: postgres:16-alpine
     container_name: dms_postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-distribution}
+    env_file:
+      - .env.aws
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-distribution}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d distribution"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -48,32 +32,21 @@ services:
       context: ./backend
     container_name: dms_backend
     restart: unless-stopped
+    env_file:
+      - .env.aws
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       APP_ENV: production
       APP_PORT: "8080"
-      CORS_ORIGINS: ${CORS_ORIGINS}
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-distribution}
       DB_SSLMODE: disable
-      DB_TIMEZONE: ${DB_TIMEZONE:-Asia/Kolkata}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_TTL_MINUTES: ${JWT_ACCESS_TTL_MINUTES:-15}
-      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS:-168}
       STORAGE_DRIVER: local
       STORAGE_LOCAL_DIR: /app/uploads
-      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL}
-      SEED_SUPERADMIN_EMAIL: ${SEED_SUPERADMIN_EMAIL:-superadmin@company.com}
-      SEED_SUPERADMIN_PASSWORD: ${SEED_SUPERADMIN_PASSWORD:-ChangeMe@123}
-      SEED_SUPERADMIN_NAME: ${SEED_SUPERADMIN_NAME:-Super Admin}
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "8080:8080"
     volumes:
       - uploads:/app/uploads
 
