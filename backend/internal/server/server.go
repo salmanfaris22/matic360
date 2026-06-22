@@ -26,6 +26,7 @@ import (
 	"github.com/salman/distribution/internal/modules/role"
 	"github.com/salman/distribution/internal/modules/salary"
 	"github.com/salman/distribution/internal/modules/staff"
+	"github.com/salman/distribution/internal/modules/target"
 	"github.com/salman/distribution/internal/modules/user"
 	"github.com/salman/distribution/internal/shared/response"
 	"github.com/salman/distribution/internal/shared/security"
@@ -78,14 +79,16 @@ func New(cfg *config.Config, db *gorm.DB, tm *security.TokenManager, store stora
 	staffSvc := staff.NewService(staffRepo, store)
 	staff.RegisterRoutes(secured, staff.NewHandler(staffSvc, store))
 
-	// Attendance (staff self-service + admin review) + auto-close worker.
+	// Attendance (staff self-service + admin review).
+	// Note: auto check-out worker intentionally disabled — staff must check out
+	// manually (no auto checkout).
 	attendanceSvc := attendance.NewService(db)
-	attendance.StartAutoCloseWorker(attendanceSvc)
 	attendance.RegisterRoutes(secured, attendance.NewHandler(attendanceSvc, store))
 
 	// Operations & inventory modules.
 	customer.RegisterRoutes(secured, db)
-	outstanding.RegisterRoutes(secured, db)
+	outstanding.RegisterRoutes(secured, db, store)
+	target.RegisterRoutes(secured, db)
 	payment.RegisterRoutes(secured, db, store)
 	expense.RegisterRoutes(secured, db, store)
 	salary.RegisterRoutes(secured, db)

@@ -6,13 +6,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/salman/distribution/internal/middleware"
 	"github.com/salman/distribution/internal/models"
+	"github.com/salman/distribution/internal/modules/outstanding"
 	"github.com/salman/distribution/internal/shared/pagination"
 	"github.com/salman/distribution/internal/shared/response"
 	"github.com/salman/distribution/internal/shared/storage"
 	"gorm.io/gorm"
 )
 
-// Handler serves payment collection + the Staff→Admin→Super Admin approval flow.
+// Handler serves the admin collections view (payments are created against a
+// bill via the outstanding module; here we list, image and verify them).
 type Handler struct {
 	db    *gorm.DB
 	store storage.Storage
@@ -22,65 +24,49 @@ func NewHandler(db *gorm.DB, store storage.Storage) *Handler {
 	return &Handler{db: db, store: store}
 }
 
-// Create records a collection (status starts pending; collected_by = caller).
-func (h *Handler) create(c *fiber.Ctx) error {
-	var p models.Payment
-	if err := c.BodyParser(&p); err != nil {
-		return response.BadRequest(c, "invalid request body")
-	}
-	if p.Amount <= 0 || p.CustomerID == 0 {
-		return response.BadRequest(c, "customer_id and a positive amount are required")
-	}
-	p.CollectedBy = middleware.CurrentUserID(c)
-	p.Status = models.PaymentPending
-	p.ApprovedBy = nil
-	if err := h.db.Create(&p).Error; err != nil {
-		return response.Internal(c, "failed to record payment")
-	}
-	return response.Created(c, p)
-}
-
+// list returns collections with customer/staff/date/status filters.
 func (h *Handler) list(c *fiber.Ctx) error {
 	pg := pagination.FromContext(c)
-	q := h.db.Model(&models.Payment{}).Preload("Customer")
-	if c.Query("status") != "" {
-		q = q.Where("status = ?", c.Query("status"))
+	q := h.db.Model(&models.Payment{}).
+		Preload("Customer").
+		Preload("Outstanding").
+		Preload("Collector")
+
+	if v := c.Query("status"); v != "" {
+		q = q.Where("status = ?", v)
 	}
+	if v := c.Query("customer_id"); v != "" {
+		q = q.Where("customer_id = ?", v)
+	}
+	if v := c.Query("staff_id"); v != "" {
+		q = q.Where("collected_by IN (SELECT user_id FROM staff_profiles WHERE id = ? AND user_id IS NOT NULL)", v)
+	}
+	if v := c.Query("from"); v != "" {
+		if d, err := time.ParseInLocation("2006-01-02", v, time.Local); err == nil {
+			q = q.Where("created_at >= ?", d)
+		}
+	}
+	if v := c.Query("to"); v != "" {
+		if d, err := time.ParseInLocation("2006-01-02", v, time.Local); err == nil {
+			q = q.Where("created_at < ?", d.Add(24*time.Hour))
+		}
+	}
+
 	// Staff only see their own collections.
 	if u := middleware.CurrentUser(c); u != nil && u.Role != nil && u.Role.Slug == models.RoleStaff {
 		q = q.Where("collected_by = ?", u.ID)
 	}
+
 	var total int64
 	q.Count(&total)
 	var items []models.Payment
-	if err := pg.Apply(q).Find(&items).Error; err != nil {
+	if err := pg.Apply(q.Order("created_at desc")).Find(&items).Error; err != nil {
 		return response.Internal(c, "failed to list payments")
 	}
 	return response.Paginated(c, items, pg.BuildMeta(total))
 }
 
-// approve advances status: admin → admin_approved, super_admin → approved.
-func (h *Handler) approve(c *fiber.Ctx) error {
-	var p models.Payment
-	if err := h.db.First(&p, c.Params("id")).Error; err != nil {
-		return response.NotFound(c, "payment not found")
-	}
-	u := middleware.CurrentUser(c)
-	now := time.Now()
-	if u.Role != nil && u.Role.Slug == models.RoleSuperAdmin {
-		p.Status = models.PaymentApproved
-		p.PaidAt = &now
-	} else {
-		p.Status = models.PaymentAdminApproved
-	}
-	uid := u.ID
-	p.ApprovedBy = &uid
-	if err := h.db.Save(&p).Error; err != nil {
-		return response.Internal(c, "failed to approve payment")
-	}
-	return response.OK(c, p)
-}
-
+// reject marks a collection rejected and rolls its bill's balance back.
 func (h *Handler) reject(c *fiber.Ctx) error {
 	var p models.Payment
 	if err := h.db.First(&p, c.Params("id")).Error; err != nil {
@@ -92,10 +78,13 @@ func (h *Handler) reject(c *fiber.Ctx) error {
 	if err := h.db.Save(&p).Error; err != nil {
 		return response.Internal(c, "failed to reject payment")
 	}
+	if p.OutstandingID != nil {
+		_ = outstanding.RecomputeBill(h.db, *p.OutstandingID)
+	}
 	return response.OK(c, p)
 }
 
-// receipt uploads a receipt image for a payment.
+// receipt uploads a receipt/cheque image for a collection.
 func (h *Handler) receipt(c *fiber.Ctx) error {
 	var p models.Payment
 	if err := h.db.First(&p, c.Params("id")).Error; err != nil {
@@ -119,8 +108,6 @@ func RegisterRoutes(api fiber.Router, db *gorm.DB, store storage.Storage) {
 	h := NewHandler(db, store)
 	g := api.Group("/payments")
 	g.Get("/", h.list)
-	g.Post("/", middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin, models.RoleStaff), h.create)
 	g.Post("/:id/receipt", middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin, models.RoleStaff), h.receipt)
-	g.Put("/:id/approve", middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin), h.approve)
 	g.Put("/:id/reject", middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin), h.reject)
 }

@@ -20,5 +20,10 @@ func RegisterRoutes(api fiber.Router, h *Handler) {
 	// Admin review.
 	admin := api.Group("/attendance", middleware.RequirePermission("attendance.read"))
 	admin.Get("/", h.AdminList)
-	admin.Put("/:id/verify", middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin), h.Verify)
+	write := middleware.RequireRole(models.RoleSuperAdmin, models.RoleAdmin)
+	admin.Post("/", write, h.AdminCreate)
+	admin.Put("/:id", write, h.AdminUpdate)
+	admin.Put("/:id/verify", write, h.Verify)
+	admin.Put("/:id/clear-auto", write, h.ClearAuto)
+	admin.Put("/:id/clear-checkout", write, h.ClearCheckOut)
 }

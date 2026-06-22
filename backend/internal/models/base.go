@@ -23,6 +23,8 @@ func AllModels() []any {
 		&User{},
 		&StaffProfile{},
 		&Attendance{},
+		&AttendanceBreak{},
+		&StaffTarget{},
 		&Customer{},
 		&Outstanding{},
 		&Payment{},

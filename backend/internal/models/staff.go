@@ -46,6 +46,10 @@ type StaffProfile struct {
 	Salary          float64     `gorm:"type:numeric(12,2);default:0" json:"salary"`
 	Status          StaffStatus `gorm:"size:20;default:'active'" json:"status"`
 
+	// MonthlyTarget is the staff member's default monthly collection goal; a
+	// monthly StaffTarget is auto-created each month from this amount.
+	MonthlyTarget float64 `gorm:"type:numeric(12,2);default:0" json:"monthly_target"`
+
 	// Work shift (24h "HH:MM") — drives late detection and auto check-out.
 	ShiftStart string `gorm:"size:5;default:'09:00'" json:"shift_start"`
 	ShiftEnd   string `gorm:"size:5;default:'17:00'" json:"shift_end"`
@@ -92,10 +96,13 @@ type Attendance struct {
 	CheckOutSelfie string     `gorm:"size:512" json:"check_out_selfie"`
 	CheckOutDevice string     `gorm:"size:191" json:"check_out_device"`
 
-	// Break tracking — supports multiple breaks; minutes accumulate.
-	OnBreak        bool       `gorm:"default:false" json:"on_break"`
-	BreakStartedAt *time.Time `json:"break_started_at,omitempty"`
-	BreakMinutes   float64    `gorm:"type:numeric(6,2);default:0" json:"break_minutes"`
+	// Break tracking — supports multiple breaks; minutes accumulate. Each
+	// individual break is also recorded in Breaks so the admin can see every
+	// break's start/end, not just the running total.
+	OnBreak        bool              `gorm:"default:false" json:"on_break"`
+	BreakStartedAt *time.Time        `json:"break_started_at,omitempty"`
+	BreakMinutes   float64           `gorm:"type:numeric(6,2);default:0" json:"break_minutes"`
+	Breaks         []AttendanceBreak `gorm:"foreignKey:AttendanceID" json:"breaks,omitempty"`
 
 	WorkingHours float64          `gorm:"type:numeric(5,2);default:0" json:"working_hours"`
 	Status       AttendanceStatus `gorm:"size:20;default:'present'" json:"status"`
@@ -108,6 +115,16 @@ type Attendance struct {
 	IsVerified bool   `gorm:"default:false" json:"is_verified"`
 	VerifiedBy *uint  `json:"verified_by,omitempty"`
 	Notes      string `gorm:"size:255" json:"notes"`
+}
+
+// AttendanceBreak is one break session within a day's attendance record.
+// EndedAt is nil while the break is in progress.
+type AttendanceBreak struct {
+	BaseModel
+	AttendanceID uint       `gorm:"not null;index" json:"attendance_id"`
+	StartedAt    time.Time  `json:"started_at"`
+	EndedAt      *time.Time `json:"ended_at,omitempty"`
+	Minutes      float64    `gorm:"type:numeric(6,2);default:0" json:"minutes"`
 }
 
 // SalaryStatus enumerates payroll states.
@@ -141,4 +158,33 @@ type Salary struct {
 func (s *Salary) BeforeSave(*gorm.DB) error {
 	s.NetAmount = s.Basic + s.Allowances + s.Incentives + s.Bonus - s.Deductions
 	return nil
+}
+
+// TargetPeriod enumerates the durations a collection target can cover.
+type TargetPeriod string
+
+const (
+	TargetWeekly     TargetPeriod = "weekly"
+	TargetMonthly    TargetPeriod = "monthly"
+	TargetQuarterly  TargetPeriod = "quarterly"   // 3 months
+	TargetHalfYearly TargetPeriod = "half_yearly" // 6 months
+	TargetYearly     TargetPeriod = "yearly"
+)
+
+// StaffTarget is one collection goal for a staff member over a date range.
+// Progress is paid-based: the sum of payments that staff collected within
+// [StartDate, EndDate]. Achieved is computed on read (not persisted).
+type StaffTarget struct {
+	BaseModel
+	StaffID   uint          `gorm:"not null;index" json:"staff_id"`
+	Staff     *StaffProfile `gorm:"foreignKey:StaffID" json:"staff,omitempty"`
+	Period    TargetPeriod  `gorm:"size:20;index" json:"period"`
+	StartDate Date          `gorm:"index" json:"start_date"`
+	EndDate   Date          `gorm:"index" json:"end_date"`
+	Amount    float64       `gorm:"type:numeric(12,2);default:0" json:"amount"`
+	AutoGen   bool          `gorm:"default:false" json:"auto_gen"` // created by the monthly auto-generator
+	Notes     string        `gorm:"size:255" json:"notes"`
+
+	// Achieved is filled in by the service layer from collected payments.
+	Achieved float64 `gorm:"-" json:"achieved"`
 }

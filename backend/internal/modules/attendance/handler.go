@@ -113,6 +113,50 @@ func (h *Handler) AdminList(c *fiber.Ctx) error {
 	return response.Paginated(c, items, p.BuildMeta(total))
 }
 
+// AdminCreate manually records an attendance entry.
+func (h *Handler) AdminCreate(c *fiber.Ctx) error {
+	var in AdminInput
+	if err := c.BodyParser(&in); err != nil {
+		return response.BadRequest(c, "invalid request body")
+	}
+	rec, err := h.svc.AdminCreate(in)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+	return response.Created(c, rec)
+}
+
+// AdminUpdate edits an attendance record's times/break/status.
+func (h *Handler) AdminUpdate(c *fiber.Ctx) error {
+	var in AdminInput
+	if err := c.BodyParser(&in); err != nil {
+		return response.BadRequest(c, "invalid request body")
+	}
+	rec, err := h.svc.AdminUpdate(c.Params("id"), in)
+	if err != nil {
+		return response.NotFound(c, "attendance record not found")
+	}
+	return response.OK(c, rec)
+}
+
+// ClearAuto removes a legacy auto-checkout from a record.
+func (h *Handler) ClearAuto(c *fiber.Ctx) error {
+	rec, err := h.svc.ClearAuto(c.Params("id"))
+	if err != nil {
+		return response.NotFound(c, "attendance record not found")
+	}
+	return response.OK(c, rec)
+}
+
+// ClearCheckOut removes the check-out from a record (admin).
+func (h *Handler) ClearCheckOut(c *fiber.Ctx) error {
+	rec, err := h.svc.ClearCheckOut(c.Params("id"))
+	if err != nil {
+		return response.NotFound(c, "attendance record not found")
+	}
+	return response.OK(c, rec)
+}
+
 // Verify marks a record verified by the current admin.
 func (h *Handler) Verify(c *fiber.Ctx) error {
 	rec, err := h.svc.Verify(c.Params("id"), middleware.CurrentUserID(c), c.FormValue("notes"))
