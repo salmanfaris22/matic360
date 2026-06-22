@@ -60,4 +60,30 @@ export const attendanceApi = {
     const res = await api.put<ApiEnvelope<Attendance>>(`/attendance/${id}/verify`, form);
     return res.data.data;
   },
+  async clearAuto(id: number): Promise<Attendance> {
+    const res = await api.put<ApiEnvelope<Attendance>>(`/attendance/${id}/clear-auto`);
+    return res.data.data;
+  },
+  async clearCheckout(id: number): Promise<Attendance> {
+    const res = await api.put<ApiEnvelope<Attendance>>(`/attendance/${id}/clear-checkout`);
+    return res.data.data;
+  },
+  async adminCreate(input: AdminAttendanceInput): Promise<Attendance> {
+    const res = await api.post<ApiEnvelope<Attendance>>("/attendance", input);
+    return res.data.data;
+  },
+  async adminUpdate(id: number, input: AdminAttendanceInput): Promise<Attendance> {
+    const res = await api.put<ApiEnvelope<Attendance>>(`/attendance/${id}`, input);
+    return res.data.data;
+  },
 };
+
+export interface AdminAttendanceInput {
+  staff_id?: number;
+  date?: string; // YYYY-MM-DD
+  check_in?: string; // HH:MM
+  check_out?: string; // HH:MM
+  break_minutes?: number;
+  status?: string;
+  notes?: string;
+}

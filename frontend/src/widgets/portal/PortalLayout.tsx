@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { Home, CalendarClock, User, Boxes } from "lucide-react";
+import { Home, CalendarClock, User, Boxes, Wallet } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { ThemeToggle } from "@/features/theme/ThemeToggle";
 import { useCurrentUser } from "@/entities/auth/session.store";
@@ -8,6 +8,7 @@ import { initials } from "@/shared/lib/format";
 const tabs = [
   { to: "/portal", label: "Home", icon: Home, end: true },
   { to: "/portal/attendance", label: "Attendance", icon: CalendarClock, end: false },
+  { to: "/portal/outstanding", label: "Outstanding", icon: Wallet, end: false },
   { to: "/portal/me", label: "Profile", icon: User, end: false },
 ];
 
@@ -15,7 +16,7 @@ export function PortalLayout() {
   const user = useCurrentUser();
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background md:max-w-2xl">
       {/* Top bar */}
       <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur">
         <div className="flex items-center gap-2">
@@ -37,7 +38,7 @@ export function PortalLayout() {
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-around border-t border-border bg-background/95 px-2 py-2 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md items-center justify-around border-t border-border bg-background/95 px-2 py-2 backdrop-blur md:max-w-2xl">
         {tabs.map((t) => (
           <NavLink
             key={t.to}

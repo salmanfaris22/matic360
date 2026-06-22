@@ -27,6 +27,17 @@ export function formatDate(iso: string | null | undefined): string {
   }).format(d);
 }
 
+// Format a duration given in hours as "2h 15m" / "45m" / "0m".
+export function formatDuration(hours: number | null | undefined): string {
+  const h = typeof hours === "number" ? hours : 0;
+  if (h <= 0) return "0m";
+  const totalMin = Math.round(h * 60);
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
+  if (hh === 0) return `${mm}m`;
+  return mm > 0 ? `${hh}h ${mm}m` : `${hh}h`;
+}
+
 // Take the first letters of up to two words for an avatar fallback.
 export function initials(name: string | undefined | null): string {
   if (!name) return "?";

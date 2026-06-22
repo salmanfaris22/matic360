@@ -1,5 +1,13 @@
 export type AttendanceStatus = "present" | "absent" | "late" | "half_day";
 
+export interface AttendanceBreak {
+  id: number;
+  attendance_id: number;
+  started_at: string;
+  ended_at?: string | null;
+  minutes: number;
+}
+
 export interface Attendance {
   id: number;
   staff_id: number;
@@ -15,6 +23,7 @@ export interface Attendance {
   on_break: boolean;
   break_started_at?: string | null;
   break_minutes: number;
+  breaks?: AttendanceBreak[] | null;
   working_hours: number;
   status: AttendanceStatus;
   auto_closed: boolean;

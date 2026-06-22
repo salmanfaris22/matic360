@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { LogOut, BadgeIndianRupee } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LogOut, BadgeIndianRupee, Target, ChevronRight } from "lucide-react";
 import { api } from "@/shared/api/client";
 import type { ApiEnvelope } from "@/shared/api/types";
 import { useCurrentUser } from "@/entities/auth/session.store";
@@ -42,6 +43,20 @@ export default function PortalMorePage() {
           <Badge className="mt-2 capitalize">{user?.role_name}</Badge>
         </div>
       </div>
+
+      <Link to="/portal/target">
+        <Card className="transition-colors hover:border-primary/40">
+          <CardContent className="flex items-center justify-between p-4">
+            <span className="flex items-center gap-3 font-medium">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Target className="h-5 w-5" />
+              </span>
+              My Target
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </Link>
 
       <div>
         <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">

@@ -18,6 +18,11 @@ api.interceptors.request.use((cfg: InternalAxiosRequestConfig) => {
   if (token) {
     cfg.headers.Authorization = `Bearer ${token}`;
   }
+  // For file uploads, drop the JSON default so axios sets
+  // multipart/form-data with the correct boundary.
+  if (cfg.data instanceof FormData) {
+    delete cfg.headers["Content-Type"];
+  }
   return cfg;
 });
 

@@ -14,7 +14,7 @@ const NotFoundPage = lazy(() => import("@/pages/misc/NotFoundPage"));
 
 // Admin module pages
 const AttendanceAdminPage = lazy(() => import("@/pages/attendance/AttendanceAdminPage"));
-const PaymentsPage = lazy(() => import("@/pages/payments/PaymentsPage"));
+const TargetsPage = lazy(() => import("@/pages/targets/TargetsPage"));
 const ExpensesPage = lazy(() => import("@/pages/expenses/ExpensesPage"));
 const SalaryPage = lazy(() => import("@/pages/salary/SalaryPage"));
 const CustomersPage = lazy(() => import("@/pages/customers/CustomersPage"));
@@ -32,6 +32,8 @@ const RolesPage = lazy(() => import("@/pages/roles/RolesPage"));
 // Staff portal pages
 const PortalHomePage = lazy(() => import("@/pages/portal/PortalHomePage"));
 const PortalAttendancePage = lazy(() => import("@/pages/portal/PortalAttendancePage"));
+const PortalOutstandingPage = lazy(() => import("@/pages/portal/PortalOutstandingPage"));
+const PortalTargetPage = lazy(() => import("@/pages/portal/PortalTargetPage"));
 const PortalMorePage = lazy(() => import("@/pages/portal/PortalMorePage"));
 
 function Fallback() {
@@ -68,6 +70,8 @@ export function AppRouter() {
         >
           <Route index element={<PortalHomePage />} />
           <Route path="attendance" element={<PortalAttendancePage />} />
+          <Route path="outstanding" element={<PortalOutstandingPage />} />
+          <Route path="target" element={<PortalTargetPage />} />
           <Route path="me" element={<PortalMorePage />} />
         </Route>
 
@@ -86,9 +90,9 @@ export function AppRouter() {
           <Route path="staff/new" element={<StaffFormPage />} />
           <Route path="staff/:id/edit" element={<StaffFormPage />} />
           <Route path="attendance" element={<AttendanceAdminPage />} />
+          <Route path="targets" element={<TargetsPage />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="outstanding" element={<OutstandingPage />} />
-          <Route path="payments" element={<PaymentsPage />} />
           <Route path="pickups" element={<PickupsPage />} />
           <Route path="salary" element={<SalaryPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
